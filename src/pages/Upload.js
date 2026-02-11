@@ -52,34 +52,40 @@ const Upload = ({ onAddFlower, flowers, onUpdateFlower, onDeleteFlower }) => {
         return;
       }
 
-      // Upload to Firebase Storage
-      try {
-        const timestamp = Date.now();
-        const filename = `flowers/${timestamp}-${file.name}`;
-        const result = await firebaseStorage.uploadImage(file, filename);
+      // Create local preview immediately
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setFormData(prev => ({
+          ...prev,
+          image: file,
+          imagePreview: e.target.result
+        }));
         
-        if (result.success) {
-          setFormData(prev => ({
-            ...prev,
-            image: file,
-            imagePreview: result.url
-          }));
-        } else {
-          throw new Error(result.error);
-        }
-      } catch (error) {
-        console.error('Error uploading image:', error);
-        // Fallback to local preview
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          setFormData(prev => ({
-            ...prev,
-            image: file,
-            imagePreview: reader.result
-          }));
-        };
-        reader.readAsDataURL(file);
+        // Try to upload to Firebase Storage in background (optional)
+        uploadToFirebase(file);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const uploadToFirebase = async (file) => {
+    try {
+      const timestamp = Date.now();
+      const filename = `flowers/${timestamp}-${file.name}`;
+      const result = await firebaseStorage.uploadImage(file, filename);
+      
+      if (result.success) {
+        // Only update if we don't already have a preview
+        setFormData(prev => {
+          if (!prev.imagePreview || prev.imagePreview.startsWith('data:')) {
+            return { ...prev, imagePreview: result.url };
+          }
+          return prev;
+        });
       }
+    } catch (error) {
+      console.log('Firebase upload failed, using local preview:', error);
+      // Keep using local preview - no error shown to user
     }
   };
 
@@ -221,13 +227,17 @@ const Upload = ({ onAddFlower, flowers, onUpdateFlower, onDeleteFlower }) => {
   };
 
   const removeImage = () => {
+    // Reset the file input
+    const fileInput = document.getElementById('image-input');
+    if (fileInput) {
+      fileInput.value = '';
+    }
+    
     setFormData(prev => ({
       ...prev,
       image: null,
       imagePreview: ''
     }));
-    // Reset file input
-    document.getElementById('image-input').value = '';
   };
 
   return (
@@ -251,46 +261,51 @@ const Upload = ({ onAddFlower, flowers, onUpdateFlower, onDeleteFlower }) => {
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Bouquet Image *
               </label>
-              <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg hover:border-flower-rose transition-colors">
-                <div className="space-y-1 text-center">
+              <div className="mt-1 flex justify-center px-8 pt-8 pb-6 border-2 border-gray-200 border-dashed rounded-xl hover:border-flower-rose transition-all duration-300 bg-gradient-to-br from-gray-50 to-white">
+                <div className="text-center space-y-4">
                   {formData.imagePreview ? (
-                    <div className="relative">
+                    <div className="relative group">
                       <img
                         src={formData.imagePreview}
                         alt="Preview"
-                        className="mx-auto h-64 w-auto rounded-lg object-cover"
+                        className="mx-auto h-72 w-auto rounded-xl object-cover shadow-lg"
                       />
                       <button
                         type="button"
                         onClick={removeImage}
-                        className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-2 hover:bg-red-600 transition-colors"
+                        className="absolute top-3 right-3 bg-red-500 text-white rounded-full p-2 hover:bg-red-600 transition-all duration-200 shadow-lg opacity-0 group-hover:opacity-100"
                       >
-                        <i className="fas fa-trash"></i>
+                        <i className="fas fa-trash text-sm"></i>
                       </button>
                     </div>
                   ) : (
                     <>
-                      <i className="fas fa-cloud-upload-alt text-4xl text-gray-400"></i>
-                      <div className="flex text-sm text-gray-600">
+                      <div className="mx-auto w-16 h-16 bg-flower-rose rounded-full flex items-center justify-center mb-4">
+                        <i className="fas fa-cloud-upload-alt text-white text-2xl"></i>
+                      </div>
+                      <div className="space-y-3">
                         <label
                           htmlFor="image-input"
-                          className="relative cursor-pointer bg-white rounded-md font-medium text-flower-rose hover:text-rose-600 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-flower-rose"
+                          className="cursor-pointer inline-flex items-center px-6 py-3 bg-flower-rose text-white font-semibold rounded-lg hover:bg-rose-600 transition-all duration-200 shadow-md hover:shadow-lg"
                         >
-                          <span>Upload a file</span>
+                          <i className="fas fa-folder-open mr-2"></i>
+                          <span>Choose File</span>
                           <input
                             id="image-input"
                             name="image"
                             type="file"
                             accept="image/*"
                             onChange={handleImageChange}
-                            className="sr-only"
+                            className="hidden"
                           />
                         </label>
-                        <p className="pl-1">or drag and drop</p>
+                        <p className="text-gray-500 text-sm font-medium">
+                          <span className="text-gray-400">or drag and drop</span>
+                        </p>
+                        <p className="text-xs text-gray-400">
+                          PNG, JPG, GIF up to 5MB
+                        </p>
                       </div>
-                      <p className="text-xs text-gray-500">
-                        PNG, JPG, GIF up to 5MB
-                      </p>
                     </>
                   )}
                 </div>

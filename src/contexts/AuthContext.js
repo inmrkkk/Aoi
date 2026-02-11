@@ -16,7 +16,19 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Listen for Firebase auth state changes
+    // Check for demo user in localStorage first
+    const storedUser = localStorage.getItem('currentUser');
+    if (storedUser) {
+      const user = JSON.parse(storedUser);
+      if (user.isDemo) {
+        // If it's a demo user, set it directly and skip Firebase auth listener
+        setCurrentUser(user);
+        setLoading(false);
+        return;
+      }
+    }
+
+    // Listen for Firebase auth state changes (only for real Firebase users)
     const unsubscribe = firebaseAuth.onAuthStateChanged(async (user) => {
       if (user) {
         // User is signed in, get additional user data from Firestore
@@ -35,9 +47,12 @@ export const AuthProvider = ({ children }) => {
           console.error('Error fetching user data:', error);
         }
       } else {
-        // User is signed out
-        setCurrentUser(null);
-        localStorage.removeItem('currentUser');
+        // User is signed out (only clear if not a demo user)
+        const currentUserData = localStorage.getItem('currentUser');
+        if (!currentUserData || !JSON.parse(currentUserData).isDemo) {
+          setCurrentUser(null);
+          localStorage.removeItem('currentUser');
+        }
       }
       setLoading(false);
     });
