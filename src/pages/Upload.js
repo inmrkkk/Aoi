@@ -60,9 +60,6 @@ const Upload = ({ onAddFlower, flowers, onUpdateFlower, onDeleteFlower }) => {
           image: file,
           imagePreview: e.target.result
         }));
-        
-        // Try to upload to Firebase Storage in background (optional)
-        uploadToFirebase(file);
       };
       reader.readAsDataURL(file);
     }
@@ -160,12 +157,12 @@ const Upload = ({ onAddFlower, flowers, onUpdateFlower, onDeleteFlower }) => {
         if (formData.image && formData.image instanceof File) {
           const timestamp = Date.now();
           const filename = `flowers/${timestamp}-${formData.image.name}`;
-          const uploadResult = await firebaseStorage.uploadImage(formData.image, filename);
+          const result = await firebaseStorage.uploadImage(formData.image, filename);
           
-          if (uploadResult.success) {
-            imageUrl = uploadResult.url;
+          if (result.success) {
+            imageUrl = result.url;
           } else {
-            throw new Error(uploadResult.error);
+            throw new Error(result.error);
           }
         }
 
@@ -175,15 +172,14 @@ const Upload = ({ onAddFlower, flowers, onUpdateFlower, onDeleteFlower }) => {
           price: formData.price.startsWith('$') ? formData.price : `$${formData.price}`,
           image: imageUrl
         };
-
+        
         await onAddFlower(newFlower);
         alert('Bouquet uploaded successfully!');
         resetForm();
       }
-      
     } catch (error) {
-      console.error('Error uploading flower:', error);
-      alert(`Error ${isEditing ? 'updating' : 'uploading'} bouquet: ${error.message}`);
+      console.error('Error saving bouquet:', error);
+      alert('Error saving bouquet. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
