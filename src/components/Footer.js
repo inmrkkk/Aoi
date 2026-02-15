@@ -58,7 +58,7 @@ const Footer = () => {
         </div>
 
         <div className="border-t border-gray-700 mt-8 pt-8 text-center text-gray-300">
-          <p>&copy; 2024 Gigante Fleur. All rights reserved. Made with <i className="fas fa-heart text-flower-rose"></i> for flower lovers.</p>
+          <p> 2024 Gigante Fleur. All rights reserved. Made with <i className="fas fa-heart text-flower-rose"></i> for flower lovers.</p>
         </div>
       </div>
     </footer>

@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { firebaseStorage } from '../firebase';
+import { useAuth } from '../contexts/AuthContext';
 
 const Upload = ({ onAddFlower, flowers, onUpdateFlower, onDeleteFlower }) => {
+  const { currentUser } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [editingFlower, setEditingFlower] = useState(null);
   const [formData, setFormData] = useState({
@@ -14,6 +16,7 @@ const Upload = ({ onAddFlower, flowers, onUpdateFlower, onDeleteFlower }) => {
   });
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [uploadStatus, setUploadStatus] = useState('');
   const navigate = useNavigate();
 
   const handleInputChange = (e) => {
@@ -65,27 +68,7 @@ const Upload = ({ onAddFlower, flowers, onUpdateFlower, onDeleteFlower }) => {
     }
   };
 
-  const uploadToFirebase = async (file) => {
-    try {
-      const timestamp = Date.now();
-      const filename = `flowers/${timestamp}-${file.name}`;
-      const result = await firebaseStorage.uploadImage(file, filename);
-      
-      if (result.success) {
-        // Only update if we don't already have a preview
-        setFormData(prev => {
-          if (!prev.imagePreview || prev.imagePreview.startsWith('data:')) {
-            return { ...prev, imagePreview: result.url };
-          }
-          return prev;
-        });
-      }
-    } catch (error) {
-      console.log('Firebase upload failed, using local preview:', error);
-      // Keep using local preview - no error shown to user
-    }
-  };
-
+  
   const validateForm = () => {
     const newErrors = {};
 
@@ -120,6 +103,17 @@ const Upload = ({ onAddFlower, flowers, onUpdateFlower, onDeleteFlower }) => {
     }
 
     setIsSubmitting(true);
+    setUploadStatus('Starting upload...');
+    
+    // Check if user is authenticated
+    console.log('Current user:', currentUser);
+    if (!currentUser) {
+      throw new Error('User not authenticated. Please log in again.');
+    }
+    
+    if (currentUser.isDemo) {
+      console.log('Demo user detected - Firebase operations may fail');
+    }
 
     try {
       if (isEditing) {
@@ -154,18 +148,35 @@ const Upload = ({ onAddFlower, flowers, onUpdateFlower, onDeleteFlower }) => {
         // Create new flower - upload image first
         let imageUrl = formData.imagePreview;
         
+        console.log('Starting upload process...');
+        setUploadStatus('Uploading image to Firebase...');
+        
         if (formData.image && formData.image instanceof File) {
+          console.log('Uploading image to Firebase Storage...');
+          setUploadStatus('Uploading image to Firebase...');
+          
           const timestamp = Date.now();
           const filename = `flowers/${timestamp}-${formData.image.name}`;
-          const result = await firebaseStorage.uploadImage(formData.image, filename);
+          
+          // Add timeout for image upload
+          const uploadPromise = firebaseStorage.uploadImage(formData.image, filename);
+          const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Upload timeout - please try again')), 30000)
+          );
+          
+          const result = await Promise.race([uploadPromise, timeoutPromise]);
           
           if (result.success) {
             imageUrl = result.url;
+            console.log('Image uploaded successfully:', imageUrl);
+            setUploadStatus('Image uploaded! Saving bouquet details...');
           } else {
             throw new Error(result.error);
           }
         }
 
+        console.log('Saving flower data to Firestore...');
+        setUploadStatus('Saving to database...');
         const newFlower = {
           title: formData.title,
           description: formData.description,
@@ -174,14 +185,33 @@ const Upload = ({ onAddFlower, flowers, onUpdateFlower, onDeleteFlower }) => {
         };
         
         await onAddFlower(newFlower);
+        console.log('Flower data saved successfully!');
+        setUploadStatus('Upload complete!');
         alert('Bouquet uploaded successfully!');
         resetForm();
+        navigate('/gallery');
       }
     } catch (error) {
       console.error('Error saving bouquet:', error);
-      alert('Error saving bouquet. Please try again.');
+      setUploadStatus('Error occurred!');
+      
+      // Show more detailed error message
+      let errorMessage = 'Error saving bouquet. Please try again.';
+      if (error.message) {
+        if (error.message.includes('timeout')) {
+          errorMessage = 'Upload timed out. Please check your internet connection and try again.';
+        } else if (error.message.includes('network')) {
+          errorMessage = 'Network error. Please check your internet connection.';
+        } else if (error.message.includes('permission')) {
+          errorMessage = 'Permission denied. Please check your Firebase configuration.';
+        } else {
+          errorMessage = `Error: ${error.message}`;
+        }
+      }
+      alert(errorMessage);
     } finally {
       setIsSubmitting(false);
+      setUploadStatus('');
     }
   };
 
@@ -397,7 +427,7 @@ const Upload = ({ onAddFlower, flowers, onUpdateFlower, onDeleteFlower }) => {
                 {isSubmitting ? (
                   <>
                     <i className="fas fa-spinner fa-spin mr-2"></i>
-                    {isEditing ? 'Updating...' : 'Uploading...'}
+                    {uploadStatus || (isEditing ? 'Updating...' : 'Uploading...')}
                   </>
                 ) : (
                   <>

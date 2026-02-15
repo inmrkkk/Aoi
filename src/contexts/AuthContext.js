@@ -80,7 +80,7 @@ export const AuthProvider = ({ children }) => {
       } else {
         // Check if it's a demo credential and Firebase auth fails
         const demoCredentials = [
-          { email: 'admin@gigantefleur.com', password: 'admin123', role: 'admin', name: 'Admin User' }
+          { email: 'gigante@gmail.com', password: 'admin123', role: 'admin', name: 'Admin User' }
         ];
         
         const demoUser = demoCredentials.find(cred => cred.email === email && cred.password === password);
@@ -103,6 +103,27 @@ export const AuthProvider = ({ children }) => {
         return { success: false, error: result.error || 'Invalid credentials' };
       }
     } catch (error) {
+      // Fallback for Firebase configuration issues
+      if (error.message.includes('configuration-not-found') || error.message.includes('auth/configuration')) {
+        console.log('Firebase auth not configured, using local fallback');
+        
+        // Allow admin credentials as fallback
+        if (email === 'gigante@gmail.com' && password === 'admin123') {
+          const user = {
+            id: `local_admin_${Date.now()}`,
+            email: email,
+            role: 'admin',
+            name: 'Admin User',
+            avatar: `https://ui-avatars.com/api/?name=Admin%20User&background=e91e63&color=fff`,
+            isLocalFallback: true
+          };
+          
+          setCurrentUser(user);
+          localStorage.setItem('currentUser', JSON.stringify(user));
+          return { success: true, user };
+        }
+      }
+      
       return { success: false, error: error.message };
     }
   };
@@ -131,6 +152,27 @@ export const AuthProvider = ({ children }) => {
         return { success: false, error: result.error };
       }
     } catch (error) {
+      // Fallback for Firebase configuration issues
+      if (error.message.includes('configuration-not-found') || error.message.includes('auth/configuration')) {
+        console.log('Firebase auth not configured, using local fallback for registration');
+        
+        // Allow admin registration as fallback
+        if (email === 'gigante@gmail.com' && password === 'admin123') {
+          const user = {
+            id: `local_admin_${Date.now()}`,
+            email: email,
+            role: role || 'admin',
+            name: name || 'Admin User',
+            avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(name || 'Admin User')}&background=e91e63&color=fff`,
+            isLocalFallback: true
+          };
+          
+          setCurrentUser(user);
+          localStorage.setItem('currentUser', JSON.stringify(user));
+          return { success: true, user };
+        }
+      }
+      
       return { success: false, error: error.message };
     }
   };

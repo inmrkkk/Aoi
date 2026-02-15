@@ -5,9 +5,9 @@ import { useAuth } from '../contexts/AuthContext';
 const Login = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-    name: '',
+    email: 'gigante@gmail.com',
+    password: 'admin123',
+    name: 'Admin User',
     role: 'admin'
   });
   const [errors, setErrors] = useState({});
@@ -88,9 +88,9 @@ const Login = () => {
     setIsLogin(!isLogin);
     setErrors({});
     setFormData({
-      email: '',
-      password: '',
-      name: '',
+      email: 'gigante@gmail.com',
+      password: 'admin123',
+      name: 'Admin User',
       role: 'admin'
     });
   };
@@ -114,6 +114,15 @@ const Login = () => {
               {isLogin ? 'Sign up' : 'Sign in'}
             </button>
           </p>
+          
+          {/* Admin Instructions */}
+          <div className="mt-4 bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+            <p className="text-xs text-yellow-800 text-center">
+              <strong>Static Admin Account</strong><br/>
+              <strong>Email:</strong> gigante@gmail.com<br/>
+              <strong>Password:</strong> admin123
+            </p>
+          </div>
         </div>
 
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>

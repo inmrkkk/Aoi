@@ -54,10 +54,12 @@ function App() {
 
   const addFlower = async (newFlower) => {
     try {
+      console.log('Attempting to add flower to Firebase:', newFlower);
       // Try to add to Firebase first
       const result = await firebaseDB.addFlower(newFlower);
       
       if (result.success) {
+        console.log('Successfully added to Firebase with ID:', result.id);
         const flowerWithId = { ...newFlower, id: result.id };
         const updatedFlowers = [...flowers, flowerWithId];
         setFlowers(updatedFlowers);
@@ -68,11 +70,13 @@ function App() {
       }
     } catch (error) {
       console.error('Error adding flower to Firebase:', error);
+      console.log('Falling back to local storage...');
       // Fallback to local storage
       const flowerWithId = { ...newFlower, id: Date.now() };
       const updatedFlowers = [...flowers, flowerWithId];
       setFlowers(updatedFlowers);
       localStorage.setItem('flowers', JSON.stringify(updatedFlowers));
+      console.log('Successfully saved to local storage');
       return flowerWithId;
     }
   };
