@@ -36,7 +36,7 @@ const Footer = () => {
 
           {/* Contact & Social */}
           <div>
-            <h3 className="font-semibold text-lg mb-4">Connect With Us</h3>
+            <h3 className="font-semibold text-lg mb-4">Connect With us</h3>
             <div className="space-y-2 text-gray-300 mb-6">
               <p><i className="fas fa-phone mr-2"></i> +639624578146</p>
               <p><i className="fas fa-envelope mr-2"></i> hello@bloomblossom.com</p>
