@@ -38,8 +38,8 @@ const Footer = () => {
           <div>
             <h3 className="font-semibold text-lg mb-4">Connect With us</h3>
             <div className="space-y-2 text-gray-300 mb-6">
-              <p><i className="fas fa-phone mr-2"></i> +639624772146</p>
-              <p><i className="fas fa-envelope mr-2"></i> haeqwe@bloombSlossom.com</p>
+              <p><i className="fas fa-phone mr-2"></i> +6396242272146</p>
+              <p><i className="fas fa-envelope mr-2"></i> haeqwe@bloomblossom.com</p>
               <p><i className="fas fa-map-marker-alt mr-2"></i> 1223 Flower St, Garden City</p>
             </div>
             <div className="flex space-x-4">
