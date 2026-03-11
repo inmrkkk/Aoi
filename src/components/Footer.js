@@ -36,11 +36,11 @@ const Footer = () => {
 
           {/* Contact & Social */}
           <div>
-            <h3 className="font-semibold text-lg mb-4">Connect With us</h3>
+            <h3 className="font-semibold text-lg mb-4">Connect Wisth us</h3>
             <div className="space-y-2 text-gray-300 mb-6">
-              <p><i className="fas fa-phone mr-2"></i> +6321573276</p>
-              <p><i className="fas fa-envelope mr-2"></i> haeqwe@bloomblossom.com</p>
-              <p><i className="fas fa-map-marker-alt mr-2"></i> 1223 Flower St, Garden City</p>
+              <p><i className="fas fa-phone mr-2"></i> +6311573276</p>
+              <p><i className="fas fa-envelope mr-2"></i> haeqwse@bloomblossom.com</p>
+              <p><i className="fas fa-map-marker-alt mr-2"></i> 1223s Flower St, Garden City</p>
             </div>
             <div className="flex space-x-4">
               {socialLinks.map((social) => (
